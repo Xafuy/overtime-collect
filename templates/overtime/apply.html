@@ -28,11 +28,12 @@
         document.addEventListener("DOMContentLoaded", function () {
             const nameInput = document.getElementById("id_employee_name");
             const idInput = document.getElementById("id_employee_id");
+            const deptSelect = document.getElementById("id_department");
             const regionSelect = document.getElementById("id_region");
             const managerInput = document.getElementById("id_manager");
             const form = document.querySelector("form");
 
-            if (!form || !nameInput || !idInput || !regionSelect || !managerInput) {
+            if (!form || !nameInput || !idInput || !deptSelect || !regionSelect || !managerInput) {
                 return;
             }
 
@@ -43,6 +44,9 @@
             }
             if (profile.employee_id && !idInput.value) {
                 idInput.value = profile.employee_id;
+            }
+            if (profile.department && !deptSelect.value) {
+                deptSelect.value = profile.department;
             }
             if (profile.region && !regionSelect.value) {
                 regionSelect.value = profile.region;
@@ -56,6 +60,7 @@
                 const data = {
                     employee_name: nameInput.value || "",
                     employee_id: idInput.value || "",
+                    department: deptSelect.value || "",
                     region: regionSelect.value || "",
                     manager: managerInput.value || "",
                 };
@@ -69,6 +74,7 @@
                     localStorage.removeItem(PROFILE_KEY);
                     nameInput.value = "";
                     idInput.value = "";
+                    if (deptSelect) deptSelect.value = "";
                     managerInput.value = "";
                 });
             }
@@ -156,12 +162,17 @@
                         {{ form.reason }}
                         {{ form.reason.errors }}
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
+                        <label class="form-label">{{ form.department.label }}：</label>
+                        {{ form.department }}
+                        {{ form.department.errors }}
+                    </div>
+                    <div class="col-md-4">
                         <label class="form-label">{{ form.region.label }}：</label>
                         {{ form.region }}
                         {{ form.region.errors }}
                     </div>
-                    <div class="col-md-6">
+                    <div class="col-md-4">
                         <label class="form-label">{{ form.manager.label }}：</label>
                         {{ form.manager }}
                         {{ form.manager.errors }}

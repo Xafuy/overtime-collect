@@ -3,7 +3,7 @@ from datetime import datetime, time, timedelta
 from django import forms
 from django.utils import timezone
 
-from .models import ManagerOption, OvertimeRecord, RegionOption
+from .models import DepartmentOption, ManagerOption, OvertimeRecord, RegionOption
 
 
 class OvertimeRecordForm(forms.ModelForm):
@@ -17,6 +17,7 @@ class OvertimeRecordForm(forms.ModelForm):
             "include_lunch_break",
             "include_evening_break",
             "reason",
+            "department",
             "region",
             "manager",
         ]
@@ -59,13 +60,22 @@ class OvertimeRecordForm(forms.ModelForm):
             if "include_evening_break" in self.fields:
                 self.fields["include_evening_break"].initial = True
 
-        # 用 ChoiceField 替换地域、主管，确保下拉框有选项（ModelForm 的 CharField 不保证渲染 options）
+        # 部门 / 地域 / 主管 使用后台配置的选项
+        dept_qs = DepartmentOption.objects.order_by("order", "id")
         region_choices = [("", "请选择地域")] + [
             (r.name, r.name) for r in RegionOption.objects.order_by("order", "id")
         ]
         manager_choices = [("", "请选择主管")] + [
             (m.name, m.name) for m in ManagerOption.objects.order_by("order", "id")
         ]
+        dept_choices = [("", "请选择部门")] + [(d.name, d.name) for d in dept_qs]
+
+        self.fields["department"] = forms.ChoiceField(
+            label="部门",
+            choices=dept_choices,
+            required=False,
+            widget=forms.Select(attrs={"class": "form-control"}),
+        )
         self.fields["region"] = forms.ChoiceField(
             label="地域",
             choices=region_choices,
@@ -80,8 +90,14 @@ class OvertimeRecordForm(forms.ModelForm):
         )
         # 编辑时回填已保存的值
         if self.instance and self.instance.pk:
+            self.fields["department"].initial = self.instance.department or ""
             self.fields["region"].initial = self.instance.region or ""
             self.fields["manager"].initial = self.instance.manager or ""
+        else:
+            # 新建默认部门为“高斯实验室”（若存在该选项）
+            default_dept = "高斯实验室"
+            if any(d.name == default_dept for d in dept_qs):
+                self.fields["department"].initial = default_dept
 
         # 统一样式
         for name, field in self.fields.items():

@@ -69,6 +69,7 @@
                         <th>晚上休息开始时间</th>
                         <th>晚上休息结束时间</th>
                         <th>加班原因</th>
+                        <th>部门</th>
                         <th>地域</th>
                         <th>主管</th>
                         <th>扣除休息后时长（小时）</th>
@@ -104,6 +105,7 @@
                                 {% endif %}
                             </td>
                             <td>{{ r.reason|default_if_none:"" }}</td>
+                            <td>{{ r.department }}</td>
                             <td>{{ r.region }}</td>
                             <td>{{ r.manager }}</td>
                             <td>{{ r.overtime_hours }}</td>
@@ -111,7 +113,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="14" class="text-center">该时段暂无申报</td>
+                            <td colspan="15" class="text-center">该时段暂无申报</td>
                         </tr>
                     {% endfor %}
                     </tbody>

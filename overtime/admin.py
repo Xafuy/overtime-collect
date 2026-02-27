@@ -1,6 +1,13 @@
 from django.contrib import admin
 
-from .models import HolidayPeriod, ManagerOption, Notice, OvertimeRecord, RegionOption
+from .models import (
+    DepartmentOption,
+    HolidayPeriod,
+    ManagerOption,
+    Notice,
+    OvertimeRecord,
+    RegionOption,
+)
 
 
 @admin.register(RegionOption)
@@ -11,6 +18,12 @@ class RegionOptionAdmin(admin.ModelAdmin):
 
 @admin.register(ManagerOption)
 class ManagerOptionAdmin(admin.ModelAdmin):
+    list_display = ("name", "order")
+    ordering = ("order", "id")
+
+
+@admin.register(DepartmentOption)
+class DepartmentOptionAdmin(admin.ModelAdmin):
     list_display = ("name", "order")
     ordering = ("order", "id")
 
@@ -35,6 +48,7 @@ class OvertimeRecordAdmin(admin.ModelAdmin):
         "employee_name",
         "employee_id",
         "date",
+        "department",
         "region",
         "manager",
         "overtime_hours",

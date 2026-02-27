@@ -30,6 +30,19 @@ class ManagerOption(models.Model):
         return self.name
 
 
+class DepartmentOption(models.Model):
+    name = models.CharField("部门名称", max_length=50, unique=True)
+    order = models.PositiveIntegerField("排序", default=0)
+
+    class Meta:
+        verbose_name = "部门选项"
+        verbose_name_plural = "部门选项"
+        ordering = ("order", "id")
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class HolidayPeriod(models.Model):
     """假期/休息时段：用于报表按“即将到来的假期或周末”分组显示。"""
     name = models.CharField("时段名称", max_length=100, help_text="如：春节假期、2月第1个周末")
@@ -84,6 +97,9 @@ class OvertimeRecord(models.Model):
     )
 
     reason = models.TextField("加班原因", blank=True)
+    department = models.CharField(
+        "部门", max_length=50, blank=True, default="高斯实验室"
+    )
     region = models.CharField("地域", max_length=20, blank=True, default="")
     manager = models.CharField("主管", max_length=50, blank=True, default="")
 
