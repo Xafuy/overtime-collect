@@ -89,9 +89,9 @@
 
         .oc-panel-header {
             display: flex;
-            align-items: baseline;
+            align-items: center;
             justify-content: space-between;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
         }
 
         .oc-panel-title {
@@ -202,6 +202,114 @@
         .alert {
             border-radius: 10px;
             font-size: 13px;
+        }
+
+        /* 报表筛选栏：两行网格，整齐对齐 */
+        .oc-filter-bar {
+            background: #fafafa;
+            border-radius: 12px;
+            padding: 18px 20px;
+            border: 1px solid #e5e7eb;
+        }
+        .oc-filter-grid {
+            display: grid;
+            grid-template-columns: 160px 160px 1fr;
+            grid-template-rows: auto auto;
+            align-items: end;
+            gap: 16px 20px;
+        }
+        .oc-filter-item {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+        .oc-filter-item.oc-filter-actions {
+            justify-self: start;
+        }
+        .oc-filter-item.oc-filter-full {
+            grid-column: 1 / -1;
+        }
+        .oc-filter-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--oc-text-muted);
+        }
+        .oc-filter-input {
+            width: 100%;
+            height: 38px;
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+            background: #fff;
+            box-sizing: border-box;
+        }
+        .oc-filter-input:focus {
+            outline: none;
+            border-color: var(--oc-accent);
+            box-shadow: 0 0 0 2px var(--oc-accent-soft);
+        }
+        .oc-filter-multi {
+            height: 72px;
+            min-height: 72px;
+            padding: 6px 12px;
+        }
+        .oc-filter-btn {
+            height: 38px;
+            padding: 0 20px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        @media (max-width: 640px) {
+            .oc-filter-grid {
+                grid-template-columns: 1fr;
+            }
+            .oc-filter-item.oc-filter-full {
+                grid-column: 1;
+            }
+        }
+
+        /* 表格内链接 */
+        table.copy-table a {
+            color: var(--oc-accent);
+            text-decoration: none;
+        }
+        table.copy-table a:hover {
+            text-decoration: underline;
+        }
+
+        /* 按钮与链接统一感 */
+        .btn-outline-secondary:hover {
+            background-color: var(--oc-surface-subtle);
+            color: var(--oc-text-main);
+        }
+        .btn-sm {
+            border-radius: 8px;
+        }
+
+        /* 报表时段块 */
+        .oc-period-block {
+            margin-bottom: 28px;
+        }
+        .oc-period-block:last-child {
+            margin-bottom: 0;
+        }
+        .oc-period-title {
+            font-size: 15px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .oc-period-badge {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--oc-text-muted);
+            background: var(--oc-surface-subtle);
+            padding: 2px 8px;
+            border-radius: 6px;
         }
     </style>
     {% block extra_head %}{% endblock %}

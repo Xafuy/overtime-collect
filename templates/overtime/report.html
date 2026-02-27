@@ -9,41 +9,36 @@
                 <div class="oc-panel-title">加班报表</div>
                 <div class="oc-panel-subtitle">按条件筛选后，整表复制到 Outlook</div>
             </div>
-            <div>
-                <a href="{% url 'overtime_apply' %}" class="btn btn-outline-secondary btn-sm">返回填报</a>
-            </div>
+            <a href="{% url 'overtime_apply' %}" class="btn btn-outline-secondary btn-sm">返回填报</a>
         </div>
 
         {% block content %}
-        <form method="get" class="row g-3 mb-3">
-            <div class="col-md-4">
-                <label class="form-label">月份：</label>
-                <input type="month" name="month" value="{{ selected_month }}" class="form-control">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">地域（可多选）：</label>
-                <select name="region" class="form-control" multiple size="3">
-                    {% for r in region_options %}
-                        <option value="{{ r.name }}" {% if r.name in selected_regions %}selected{% endif %}>
-                            {{ r.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-                <div class="form-text">按 Ctrl/Command 键可多选地域</div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">主管：</label>
-                <select name="manager" class="form-control">
-                    <option value="">全部</option>
-                    {% for m in manager_options %}
-                        <option value="{{ m.name }}" {% if selected_manager == m.name %}selected{% endif %}>
-                            {{ m.name }}
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-12 d-flex justify-content-end">
-                <button type="submit" class="btn btn-primary">应用筛选</button>
+        <form method="get" class="oc-filter-bar mb-4">
+            <div class="oc-filter-grid">
+                <div class="oc-filter-item">
+                    <label class="oc-filter-label">月份</label>
+                    <input type="month" name="month" value="{{ selected_month }}" class="oc-filter-input">
+                </div>
+                <div class="oc-filter-item">
+                    <label class="oc-filter-label">主管</label>
+                    <select name="manager" class="oc-filter-input">
+                        <option value="">全部</option>
+                        {% for m in manager_options %}
+                            <option value="{{ m.name }}" {% if selected_manager == m.name %}selected{% endif %}>{{ m.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="oc-filter-item oc-filter-actions">
+                    <button type="submit" class="btn btn-primary oc-filter-btn">应用筛选</button>
+                </div>
+                <div class="oc-filter-item oc-filter-full">
+                    <label class="oc-filter-label">地域（可多选，按住 Ctrl/Command 点选）</label>
+                    <select name="region" class="oc-filter-input oc-filter-multi" multiple size="3">
+                        {% for r in region_options %}
+                            <option value="{{ r.name }}" {% if r.name in selected_regions %}selected{% endif %}>{{ r.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
             </div>
         </form>
 
@@ -51,14 +46,14 @@
         <div class="form-text mb-3">在后台「假期/时段」中维护本月假期或周末区间，此处按时段分组显示，便于查看即将到来的假期有几人申报。</div>
 
         {% for period, section_records in period_sections %}
-        <div class="mb-4">
-            <h3 class="h6 mb-2">
+        <div class="oc-period-block">
+            <h3 class="oc-period-title">
                 {% if period %}
                     {{ period.name }}（{{ period.start_date|date:"Y-m-d" }} ~ {{ period.end_date|date:"Y-m-d" }}）
                 {% else %}
                     {% if period_sections|length > 1 %}其他日期{% else %}本月申报{% endif %}
                 {% endif %}
-                <span class="badge bg-secondary ms-2">{{ section_records|length }} 人</span>
+                <span class="oc-period-badge">{{ section_records|length }} 人</span>
             </h3>
             <div class="table-responsive mb-2">
                 <table class="copy-table">
