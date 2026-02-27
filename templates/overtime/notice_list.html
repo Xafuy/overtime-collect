@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}规则说明{% endblock %}
+
+{% block layout %}
+<div class="oc-panel">
+    <div class="oc-panel-header">
+        <div>
+            <div class="oc-panel-title">规则说明</div>
+            <div class="oc-panel-subtitle">加班申报规则与说明，由管理员在后台维护</div>
+        </div>
+        <div>
+            <a href="{% url 'overtime_apply' %}" class="btn btn-outline-secondary btn-sm">返回填报</a>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        {% for notice in notices %}
+        <div class="mb-4">
+            <h2 class="h5 mb-2">{{ notice.title }}</h2>
+            <div style="white-space: pre-wrap; font-size: 14px; line-height: 1.6; color: var(--oc-text-main);">{{ notice.content }}</div>
+            <div class="form-text mt-1">更新时间：{{ notice.updated_at|date:"Y-m-d H:i" }}</div>
+        </div>
+        {% empty %}
+        <p class="text-muted">暂无公告或规则说明。</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

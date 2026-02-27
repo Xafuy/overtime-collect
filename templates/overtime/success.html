@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}提交成功{% endblock %}
+
+{% block content %}
+<div class="alert alert-success">
+    加班申请已提交。
+</div>
+
+<a href="{% url 'overtime_apply' %}" class="btn btn-primary me-2">继续填报</a>
+<a href="{% url 'overtime_report' %}" class="btn btn-outline-secondary">查看报表</a>
+{% endblock %}
+

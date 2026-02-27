@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}加班报表{% endblock %}
+
+{% block layout %}
+<div class="oc-panel">
+        <div class="oc-panel-header">
+            <div>
+                <div class="oc-panel-title">加班报表</div>
+                <div class="oc-panel-subtitle">按条件筛选后，整表复制到 Outlook</div>
+            </div>
+            <div>
+                <a href="{% url 'overtime_apply' %}" class="btn btn-outline-secondary btn-sm">返回填报</a>
+            </div>
+        </div>
+
+        {% block content %}
+        <form method="get" class="row g-3 mb-3">
+            <div class="col-md-4">
+                <label class="form-label">月份：</label>
+                <input type="month" name="month" value="{{ selected_month }}" class="form-control">
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">地域（可多选）：</label>
+                <select name="region" class="form-control" multiple size="3">
+                    {% for r in region_options %}
+                        <option value="{{ r.name }}" {% if r.name in selected_regions %}selected{% endif %}>
+                            {{ r.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="form-text">按 Ctrl/Command 键可多选地域</div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">主管：</label>
+                <select name="manager" class="form-control">
+                    <option value="">全部</option>
+                    {% for m in manager_options %}
+                        <option value="{{ m.name }}" {% if selected_manager == m.name %}selected{% endif %}>
+                            {{ m.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 d-flex justify-content-end">
+                <button type="submit" class="btn btn-primary">应用筛选</button>
+            </div>
+        </form>
+
+        <div class="oc-section-title">按假期/时段汇总</div>
+        <div class="form-text mb-3">在后台「假期/时段」中维护本月假期或周末区间，此处按时段分组显示，便于查看即将到来的假期有几人申报。</div>
+
+        {% for period, section_records in period_sections %}
+        <div class="mb-4">
+            <h3 class="h6 mb-2">
+                {% if period %}
+                    {{ period.name }}（{{ period.start_date|date:"Y-m-d" }} ~ {{ period.end_date|date:"Y-m-d" }}）
+                {% else %}
+                    {% if period_sections|length > 1 %}其他日期{% else %}本月申报{% endif %}
+                {% endif %}
+                <span class="badge bg-secondary ms-2">{{ section_records|length }} 人</span>
+            </h3>
+            <div class="table-responsive mb-2">
+                <table class="copy-table">
+                    <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>工号</th>
+                        <th>日期</th>
+                        <th>开始时间</th>
+                        <th>结束时间</th>
+                        <th>中午休息开始时间</th>
+                        <th>中午休息结束时间</th>
+                        <th>晚上休息开始时间</th>
+                        <th>晚上休息结束时间</th>
+                        <th>加班原因</th>
+                        <th>地域</th>
+                        <th>主管</th>
+                        <th>扣除休息后时长（小时）</th>
+                        <th>操作</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for r in section_records %}
+                        <tr>
+                            <td>{{ r.employee_name }}</td>
+                            <td>{{ r.employee_id }}</td>
+                            <td>{{ r.start_datetime|date:"Y-m-d" }}</td>
+                            <td>{{ r.start_datetime|date:"Y-m-d H:i" }}</td>
+                            <td>{{ r.end_datetime|date:"Y-m-d H:i" }}</td>
+                            <td>
+                                {% if r.include_lunch_break %}
+                                    {{ r.start_datetime|date:"Y-m-d" }} 12:00
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.include_lunch_break %}
+                                    {{ r.start_datetime|date:"Y-m-d" }} 13:30
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.include_evening_break %}
+                                    {{ r.start_datetime|date:"Y-m-d" }} 17:00
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.include_evening_break %}
+                                    {{ r.start_datetime|date:"Y-m-d" }} 17:30
+                                {% endif %}
+                            </td>
+                            <td>{{ r.reason|default_if_none:"" }}</td>
+                            <td>{{ r.region }}</td>
+                            <td>{{ r.manager }}</td>
+                            <td>{{ r.overtime_hours }}</td>
+                            <td><a href="{% url 'overtime_edit' r.id %}">编辑</a></td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="14" class="text-center">该时段暂无申报</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-muted">本月暂无假期/时段配置，或筛选后无数据。请在后台「假期/时段」中添加本月假期或周末区间。</p>
+        {% endfor %}
+        {% endblock %}
+    </div>
+</div>
+{% endblock %}
+

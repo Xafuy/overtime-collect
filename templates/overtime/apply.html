@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block title %}加班填报{% endblock %}
+
+{% block extra_head %}
+{{ block.super }}
+<script>
+    (function () {
+        const PROFILE_KEY = "oc-overtime-profile";
+
+        function loadProfile() {
+            try {
+                const raw = localStorage.getItem(PROFILE_KEY);
+                return raw ? JSON.parse(raw) : {};
+            } catch (e) {
+                return {};
+            }
+        }
+
+        function saveProfile(data) {
+            try {
+                localStorage.setItem(PROFILE_KEY, JSON.stringify(data));
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            const nameInput = document.getElementById("id_employee_name");
+            const idInput = document.getElementById("id_employee_id");
+            const regionSelect = document.getElementById("id_region");
+            const managerInput = document.getElementById("id_manager");
+            const form = document.querySelector("form");
+
+            if (!form || !nameInput || !idInput || !regionSelect || !managerInput) {
+                return;
+            }
+
+            {% if not is_edit %}
+            const profile = loadProfile();
+            if (profile.employee_name && !nameInput.value) {
+                nameInput.value = profile.employee_name;
+            }
+            if (profile.employee_id && !idInput.value) {
+                idInput.value = profile.employee_id;
+            }
+            if (profile.region && !regionSelect.value) {
+                regionSelect.value = profile.region;
+            }
+            if (profile.manager && !managerInput.value) {
+                managerInput.value = profile.manager;
+            }
+            {% endif %}
+
+            form.addEventListener("submit", function () {
+                const data = {
+                    employee_name: nameInput.value || "",
+                    employee_id: idInput.value || "",
+                    region: regionSelect.value || "",
+                    manager: managerInput.value || "",
+                };
+                saveProfile(data);
+            });
+
+            const clearBtn = document.getElementById("clearProfile");
+            if (clearBtn) {
+                clearBtn.addEventListener("click", function (e) {
+                    e.preventDefault();
+                    localStorage.removeItem(PROFILE_KEY);
+                    nameInput.value = "";
+                    idInput.value = "";
+                    managerInput.value = "";
+                });
+            }
+        });
+    })();
+</script>
+{% endblock %}
+
+{% block layout %}
+<div class="oc-layout">
+    <div class="oc-panel">
+        <div class="oc-panel-header">
+            <div>
+                <div class="oc-panel-title">
+                    {% if is_edit %}编辑加班申请{% else %}加班申请{% endif %}
+                </div>
+                <div class="oc-panel-subtitle">单日、精确到时间段的加班填报</div>
+            </div>
+        </div>
+
+        {% block content %}
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger mb-3">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.employee_name.label }}：</label>
+                    {{ form.employee_name }}
+                    {{ form.employee_name.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.employee_id.label }}：</label>
+                    {{ form.employee_id }}
+                    {{ form.employee_id.errors }}
+                </div>
+            </div>
+
+            <div class="row g-3 mt-1">
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.start_datetime.label }}：</label>
+                    {{ form.start_datetime }}
+                    <div class="form-text">默认次日 08:00，可按实际修改</div>
+                    {{ form.start_datetime.errors }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">{{ form.end_datetime.label }}：</label>
+                    {{ form.end_datetime }}
+                    <div class="form-text">默认次日 17:30，需与开始在同一天内</div>
+                    {{ form.end_datetime.errors }}
+                </div>
+            </div>
+
+            <div class="row g-3 mt-2">
+                <div class="col-md-6 d-flex align-items-center">
+                    <div class="form-check">
+                        {{ form.include_lunch_break }}
+                        <label class="form-check-label" for="{{ form.include_lunch_break.id_for_label }}">
+                            {{ form.include_lunch_break.label }}
+                        </label>
+                        {{ form.include_lunch_break.errors }}
+                    </div>
+                </div>
+                <div class="col-md-6 d-flex align-items-center">
+                    <div class="form-check">
+                        {{ form.include_evening_break }}
+                        <label class="form-check-label" for="{{ form.include_evening_break.id_for_label }}">
+                            {{ form.include_evening_break.label }}
+                        </label>
+                        {{ form.include_evening_break.errors }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <div class="oc-section-title">加班信息</div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">{{ form.reason.label }}：</label>
+                        {{ form.reason }}
+                        {{ form.reason.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.region.label }}：</label>
+                        {{ form.region }}
+                        {{ form.region.errors }}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.manager.label }}：</label>
+                        {{ form.manager }}
+                        {{ form.manager.errors }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2 align-items-center">
+                <button type="submit" class="btn btn-primary">
+                    {% if is_edit %}保存修改{% else %}提交申请{% endif %}
+                </button>
+                <a href="{% url 'overtime_report' %}" class="btn btn-outline-secondary">查看报表</a>
+                {% if not is_edit %}
+                    <button id="clearProfile" class="btn btn-link btn-sm" type="button" style="font-size: 12px;">
+                        清除本机记住的姓名/工号
+                    </button>
+                {% endif %}
+            </div>
+        </form>
+        {% endblock %}
+    </div>
+
+    <div class="oc-panel">
+        <div class="oc-panel-header">
+            <div>
+                <div class="oc-panel-title">规则摘要</div>
+                <div class="oc-panel-subtitle">系统校验与时间计算说明</div>
+            </div>
+        </div>
+        <div style="font-size: 13px; color: var(--oc-text-muted); line-height: 1.6;">
+            <div class="oc-section-title">时间规则</div>
+            <ul class="mb-3 ps-3">
+                <li>开始时间必须早于结束时间，且两者在同一天内。</li>
+                <li>默认整体日期为次日，如需跨天请按公司制度拆分为多条记录。</li>
+            </ul>
+
+            <div class="oc-section-title">休息时间扣除</div>
+            <ul class="mb-3 ps-3">
+                <li>午休：12:00–13:30；晚休：17:00–17:30。</li>
+                <li>勾选对应选项时，系统会自动从加班时段中扣除与休息段的重叠时长。</li>
+            </ul>
+
+            <div class="oc-section-title">时长限制</div>
+            <ul class="mb-0 ps-3">
+                <li>同一自然日内，加班时长（扣除休息后）不得超过 8 小时。</li>
+                <li>超出时将无法提交，请调整时间或拆分申请。</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,32 @@
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 数据库（按需保留或备份后忽略）
+db.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# 静态收集目录
+staticfiles/
+
+# 环境与 IDE
+.env
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
