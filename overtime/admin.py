@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import (
+    ApprovalBatch,
     DepartmentOption,
     HolidayPeriod,
     ManagerOption,
@@ -8,6 +9,12 @@ from .models import (
     OvertimeRecord,
     RegionOption,
 )
+
+
+@admin.register(ApprovalBatch)
+class ApprovalBatchAdmin(admin.ModelAdmin):
+    list_display = ("id", "note", "created_at")
+    readonly_fields = ("created_at",)
 
 
 @admin.register(RegionOption)
@@ -53,13 +60,15 @@ class OvertimeRecordAdmin(admin.ModelAdmin):
         "region",
         "manager",
         "overtime_hours",
+        "email_status",
+        "is_reportable",
         "is_locked",
         "start_datetime",
         "end_datetime",
         "include_lunch_break",
         "include_evening_break",
     )
-    list_filter = ("region", "manager", "is_locked", "start_datetime")
+    list_filter = ("region", "manager", "is_locked", "email_status", "start_datetime")
     list_editable = ("is_locked",)
     search_fields = ("employee_name", "employee_id")
     actions = ["bulk_freeze", "bulk_unfreeze"]

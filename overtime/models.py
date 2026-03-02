@@ -100,7 +100,31 @@ class Notice(models.Model):
         return self.title
 
 
+class ApprovalBatch(models.Model):
+    """统一发邮件批次：一封邮件附件可关联多条加班记录。"""
+    note = models.CharField("备注", max_length=200, blank=True, help_text="如：2025年春节加班统一审批邮件")
+    attachment = models.FileField("邮件附件", upload_to="overtime_approvals/batch/%Y/%m/")
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "统一审批邮件批次"
+        verbose_name_plural = "统一审批邮件批次"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"批次 {self.created_at.strftime('%Y-%m-%d %H:%M')}"
+
+
 class OvertimeRecord(models.Model):
+
+    EMAIL_STATUS_PENDING = "pending"
+    EMAIL_STATUS_UNIFIED = "unified"
+    EMAIL_STATUS_PERSONAL = "personal"
+    EMAIL_STATUS_CHOICES = [
+        (EMAIL_STATUS_PENDING, "未发邮件"),
+        (EMAIL_STATUS_UNIFIED, "已统一发邮件"),
+        (EMAIL_STATUS_PERSONAL, "已个人补发邮件"),
+    ]
 
     employee_name = models.CharField("姓名", max_length=50)
     employee_id = models.CharField("工号", max_length=50)
@@ -130,6 +154,29 @@ class OvertimeRecord(models.Model):
         "已冻结，不可再修改", default=False, help_text="冻结后只能在后台解除，前台无法再编辑。"
     )
 
+    # 邮件审批状态：未发邮件 / 已统一发邮件 / 已个人补发邮件
+    email_status = models.CharField(
+        "邮件状态",
+        max_length=20,
+        choices=EMAIL_STATUS_CHOICES,
+        default=EMAIL_STATUS_PENDING,
+    )
+    # 统一发邮件时关联的批次（一封邮件对应多条记录）
+    approval_batch = models.ForeignKey(
+        "ApprovalBatch",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        verbose_name="统一审批批次",
+    )
+    # 个人补发邮件时上传的附件（每条记录单独一个文件）
+    approval_attachment = models.FileField(
+        "审批邮件附件",
+        upload_to="overtime_approvals/personal/%Y/%m/",
+        null=True,
+        blank=True,
+    )
+
     created_at = models.DateTimeField("创建时间", auto_now_add=True)
     updated_at = models.DateTimeField("更新时间", auto_now=True)
 
@@ -144,6 +191,11 @@ class OvertimeRecord(models.Model):
     @property
     def date(self):
         return self.start_datetime.date()
+
+    @property
+    def is_reportable(self):
+        """已上传审批邮件附件，可上报。"""
+        return bool(self.approval_batch_id or self.approval_attachment)
 
     def clean(self):
         # 已冻结的记录不允许修改（仅超管在后台可解锁）

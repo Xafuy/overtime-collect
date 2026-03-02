@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}上传个人补发邮件{% endblock %}
+
+{% block layout %}
+<div class="oc-panel">
+    <div class="oc-panel-header">
+        <div>
+            <div class="oc-panel-title">上传个人补发邮件</div>
+            <div class="oc-panel-subtitle">{{ record.employee_name }}（{{ record.employee_id }}） {{ record.start_datetime|date:"Y-m-d H:i" }} ~ {{ record.end_datetime|date:"H:i" }}</div>
+        </div>
+        <a href="{% url 'overtime_report' %}?month={{ report_params.month }}&manager={{ report_params.manager }}{% for r in report_params.regions %}&region={{ r }}{% endfor %}" class="btn btn-outline-secondary btn-sm">返回报表</a>
+    </div>
+
+    <div class="alert alert-warning oc-approval-notice mb-3" role="alert">
+        <strong>重要提醒：</strong>上传的邮件中<strong>必须包含 xm 的确认回复</strong>，方可作为审批依据并标记为可上报。请确认后再上传。
+    </div>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="month" value="{{ report_params.month }}">
+        <input type="hidden" name="manager" value="{{ report_params.manager }}">
+        {% for r in report_params.regions %}
+        <input type="hidden" name="region" value="{{ r }}">
+        {% endfor %}
+        <div class="mb-3">
+            <label class="form-label">邮件附件 <span class="text-danger">*</span></label>
+            <input type="file" name="attachment" class="form-control" accept=".pdf,.eml,.msg,.doc,.docx,image/*" required>
+            <div class="form-text">上传该条加班的审批邮件或证明（须含 xm 确认回复），上传后将标记为「已个人补发邮件」并可上报。</div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <button type="submit" class="btn btn-primary">确认上传</button>
+            <a href="{% url 'overtime_report' %}?month={{ report_params.month }}&manager={{ report_params.manager }}{% for r in report_params.regions %}&region={{ r }}{% endfor %}" class="btn btn-outline-secondary">取消</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

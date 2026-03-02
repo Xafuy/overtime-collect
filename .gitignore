@@ -17,8 +17,9 @@ __pycache__/
 dist/
 build/
 
-# 静态收集目录
+# 静态收集目录与上传文件
 staticfiles/
+media/
 
 # 环境与 IDE
 .env

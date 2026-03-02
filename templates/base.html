@@ -167,9 +167,16 @@
             color: var(--oc-text-muted);
         }
 
+        .oc-table-wrap {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            max-width: 100%;
+        }
+
         table.copy-table {
             border-collapse: collapse;
             width: 100%;
+            min-width: 720px;
             font-size: 12px;
             background-color: var(--oc-panel);
         }
@@ -177,7 +184,22 @@
         table.copy-table th,
         table.copy-table td {
             border: 1px solid rgba(209, 213, 219, 0.9);
-            padding: 5px 8px;
+            padding: 4px 6px;
+            white-space: nowrap;
+        }
+
+        table.copy-table .oc-col-reason {
+            white-space: normal;
+            max-width: 140px;
+            min-width: 80px;
+        }
+        table.copy-table .oc-col-break {
+            white-space: nowrap;
+            font-size: 11px;
+            min-width: 100px;
+            vertical-align: middle;
+        }
+        table.copy-table .oc-col-hours {
             white-space: nowrap;
         }
 
@@ -187,8 +209,38 @@
             color: #111827;
         }
 
-        table.copy-table tbody tr:nth-child(even) {
+        table.copy-table tbody tr:nth-child(even) td {
             background-color: #f9fafb;
+        }
+
+        /* 横向滚动时固定左侧与右侧列 */
+        table.copy-table th.oc-sticky-col,
+        table.copy-table td.oc-sticky-col {
+            position: sticky;
+            left: 0;
+            z-index: 1;
+            background: #f3f4f6;
+            box-shadow: 2px 0 4px rgba(0,0,0,0.06);
+        }
+        table.copy-table tbody tr td.oc-sticky-col {
+            background: var(--oc-panel);
+        }
+        table.copy-table tbody tr:nth-child(even) td.oc-sticky-col {
+            background: #f9fafb;
+        }
+        table.copy-table th.oc-sticky-right,
+        table.copy-table td.oc-sticky-right {
+            position: sticky;
+            right: 0;
+            z-index: 1;
+            background: #f3f4f6;
+            box-shadow: -2px 0 4px rgba(0,0,0,0.06);
+        }
+        table.copy-table tbody tr td.oc-sticky-right {
+            background: var(--oc-panel);
+        }
+        table.copy-table tbody tr:nth-child(even) td.oc-sticky-right {
+            background: #f9fafb;
         }
 
         .oc-section-title {
@@ -201,6 +253,12 @@
 
         .alert {
             border-radius: 10px;
+            font-size: 13px;
+        }
+        .oc-messages .alert { margin-bottom: 0; }
+        .alert-success { background-color: #dcfce7; border-color: #86efac; color: #166534; }
+        .oc-approval-notice {
+            border-left: 4px solid #b45309;
             font-size: 13px;
         }
 
@@ -292,6 +350,27 @@
         .oc-table-link-danger {
             color: #dc2626;
         }
+        /* 操作列：附件链接（唯一入口，简洁展示） */
+        .oc-attachment-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 12px;
+            color: #0369a1;
+            background: #e0f2fe;
+            padding: 2px 8px;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-right: 6px;
+        }
+        .oc-attachment-link:hover {
+            background: #bae6fd;
+            color: #0c4a6e;
+        }
+        .oc-action-link {
+            margin-left: 2px;
+            margin-right: 2px;
+        }
 
         /* 按钮与链接统一感 */
         .btn-outline-secondary:hover {
@@ -350,6 +429,17 @@
         table.copy-table tbody tr.oc-row-locked:nth-child(even) {
             background-color: #fef9e7;
         }
+        /* 报表图例：淡黄色 = 已冻结 */
+        .oc-legend { font-size: 12px; color: var(--oc-text-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .oc-legend-swatch { display: inline-block; width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.08); vertical-align: middle; }
+        .oc-legend-locked { background-color: #fffbeb; }
+        /* 报表：邮件状态、可上报 */
+        .oc-badge-email-pending { font-size: 11px; font-weight: 500; color: #6b7280; background: #f3f4f6; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+        .oc-badge-email-unified { font-size: 11px; font-weight: 500; color: #0369a1; background: #e0f2fe; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+        .oc-badge-email-personal { font-size: 11px; font-weight: 500; color: #0d9488; background: #ccfbf1; padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+        .oc-badge-ok { font-size: 11px; font-weight: 500; color: #15803d; background: #dcfce7; padding: 2px 8px; border-radius: 6px; }
+        .oc-badge-no { font-size: 11px; font-weight: 500; color: #b91c1c; background: #fee2e2; padding: 2px 8px; border-radius: 6px; }
+        .oc-col-select { width: 2.2em; text-align: center; }
     </style>
     {% block extra_head %}{% endblock %}
 </head>
@@ -365,6 +455,16 @@
             <div class="oc-badge">Internal · Strict Mode</div>
         </div>
     </div>
+
+    {% if messages %}
+    <div class="oc-messages mb-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} oc-alert-dismissible" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     {% block layout %}
         {% block content %}{% endblock %}

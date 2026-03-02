@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+
+{% block title %}复制用完整表{% endblock %}
+
+{% block layout %}
+<div class="oc-panel">
+    <div class="oc-panel-header">
+        <div>
+            <div class="oc-panel-title">复制用完整表</div>
+            <div class="oc-panel-subtitle">按假期分组，完整列格式便于复制到 Excel</div>
+        </div>
+        <div class="d-flex gap-2 align-items-center">
+            <a href="{% url 'overtime_report' %}?month={{ selected_month }}{% if selected_manager %}&manager={{ selected_manager }}{% endif %}{% for r in selected_regions %}&region={{ r }}{% endfor %}" class="btn btn-outline-secondary btn-sm">返回报表</a>
+            <a href="{% url 'overtime_apply' %}" class="btn btn-outline-secondary btn-sm">返回填报</a>
+        </div>
+    </div>
+
+    <form method="get" class="oc-filter-bar mb-4">
+        <div class="oc-filter-grid">
+            <div class="oc-filter-item">
+                <label class="oc-filter-label">月份</label>
+                <input type="month" name="month" value="{{ selected_month }}" class="oc-filter-input">
+            </div>
+            <div class="oc-filter-item">
+                <label class="oc-filter-label">主管</label>
+                <select name="manager" class="oc-filter-input">
+                    <option value="">全部</option>
+                    {% for m in manager_options %}
+                        <option value="{{ m.name }}" {% if selected_manager == m.name %}selected{% endif %}>{{ m.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="oc-filter-item oc-filter-actions">
+                <button type="submit" class="btn btn-primary oc-filter-btn">应用筛选</button>
+            </div>
+            <div class="oc-filter-item oc-filter-full">
+                <label class="oc-filter-label">地域（可多选，按住 Ctrl/Command 点选）</label>
+                <select name="region" class="oc-filter-input oc-filter-multi" multiple size="3">
+                    {% for r in region_options %}
+                        <option value="{{ r.name }}" {% if r.name in selected_regions %}selected{% endif %}>{{ r.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </form>
+
+    <p class="form-text mb-2">请只选中下方各时段表格后复制，粘贴到 Excel 即可保持列对齐。</p>
+
+    {% for period, section_records in period_sections %}
+    <div class="oc-period-block mb-3">
+        <h3 class="oc-period-title">
+            {% if period %}
+                {{ period.name }}（{{ period.start_date|date:"Y-m-d" }} ~ {{ period.end_date|date:"Y-m-d" }}）
+            {% else %}
+                {% if period_sections|length > 1 %}其他日期{% else %}本月申报{% endif %}
+            {% endif %}
+            <span class="oc-period-badge">{{ section_records|length }} 人</span>
+        </h3>
+        <div class="table-responsive mb-2">
+            <table class="copy-table oc-copy-table">
+                <thead>
+                    <tr>
+                        <th>姓名</th>
+                        <th>工号</th>
+                        <th>日期</th>
+                        <th>开始时间</th>
+                        <th>结束时间</th>
+                        <th>中午休息开始时间</th>
+                        <th>中午休息结束时间</th>
+                        <th>晚上休息开始时间</th>
+                        <th>晚上休息结束时间</th>
+                        <th>加班原因</th>
+                        <th>部门</th>
+                        <th>地域</th>
+                        <th>主管</th>
+                        <th>扣除休息后时长（小时）</th>
+                        <th>冻结</th>
+                        <th>邮件状态</th>
+                        <th>可上报</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in section_records %}
+                    <tr>
+                        <td>{{ r.employee_name }}</td>
+                        <td>{{ r.employee_id }}</td>
+                        <td>{{ r.start_datetime|date:"Y-m-d" }}</td>
+                        <td>{{ r.start_datetime|date:"Y-m-d H:i" }}</td>
+                        <td>{{ r.end_datetime|date:"Y-m-d H:i" }}</td>
+                        <td>{% if r.include_lunch_break %}{{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.lunch_start }}{% endif %}</td>
+                        <td>{% if r.include_lunch_break %}{{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.lunch_end }}{% endif %}</td>
+                        <td>{% if r.include_evening_break %}{{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.evening_start }}{% endif %}</td>
+                        <td>{% if r.include_evening_break %}{{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.evening_end }}{% endif %}</td>
+                        <td>{{ r.reason|default_if_none:"" }}</td>
+                        <td>{{ r.department }}</td>
+                        <td>{{ r.region }}</td>
+                        <td>{{ r.manager }}</td>
+                        <td>{{ r.overtime_hours }}</td>
+                        <td>
+                            {% if r.is_locked %}
+                                <span class="oc-badge-locked">已冻结</span>
+                            {% else %}
+                                <span class="oc-badge-draft">可编辑</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.email_status == 'pending' %}
+                                <span class="oc-badge-email-pending">未发邮件</span>
+                            {% elif r.email_status == 'unified' %}
+                                <span class="oc-badge-email-unified">已统一发邮件</span>
+                            {% else %}
+                                <span class="oc-badge-email-personal">已个人补发</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.is_reportable %}
+                                <span class="oc-badge-ok">是</span>
+                            {% else %}
+                                <span class="oc-badge-no">否</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="17" class="text-center">该时段暂无记录</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% empty %}
+    <p class="text-muted">当前筛选下暂无记录。</p>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -2,6 +2,22 @@
 
 {% block title %}加班报表{% endblock %}
 
+{% block extra_head %}
+{{ block.super }}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var f = document.getElementById("oc-batch-approval-form");
+    if (f) f.addEventListener("submit", function(e) {
+        var checked = document.querySelectorAll('input[name="ids"]:checked');
+        if (checked.length === 0) {
+            e.preventDefault();
+            alert("请至少勾选一条「未发邮件」记录。");
+        }
+    });
+});
+</script>
+{% endblock %}
+
 {% block layout %}
 <div class="oc-panel">
         <div class="oc-panel-header">
@@ -9,7 +25,10 @@
                 <div class="oc-panel-title">加班报表</div>
                 <div class="oc-panel-subtitle">按条件筛选后，整表复制到 Outlook</div>
             </div>
-            <a href="{% url 'overtime_apply' %}" class="btn btn-outline-secondary btn-sm">返回填报</a>
+            <div class="d-flex gap-2 align-items-center">
+                <a href="{% url 'overtime_report_copy' %}?month={{ selected_month }}{% if selected_manager %}&manager={{ selected_manager }}{% endif %}{% for r in selected_regions %}&region={{ r }}{% endfor %}" class="btn btn-outline-secondary btn-sm">完整表（复制到 Excel）</a>
+                <a href="{% url 'overtime_apply' %}" class="btn btn-outline-secondary btn-sm">返回填报</a>
+            </div>
         </div>
 
         {% block content %}
@@ -43,7 +62,18 @@
         </form>
 
         <div class="oc-section-title">按假期/时段汇总</div>
-        <div class="form-text mb-3">在后台「假期/时段」中维护本月假期或周末区间，此处按时段分组显示，便于查看即将到来的假期有几人申报。</div>
+        <div class="form-text mb-2">在后台「假期/时段」中维护本月假期或周末区间，此处按时段分组显示。勾选「未发邮件」记录后可批量标记为已统一发邮件（上传一封附件即可）；单条可点「上传补发邮件」。</div>
+        <div class="oc-legend mb-3">
+            <span class="oc-legend-item"><span class="oc-legend-swatch oc-legend-locked"></span> 淡黄色 = 已冻结（不可编辑/删除）</span>
+        </div>
+
+        <form method="post" action="{% url 'batch_unified_approval' %}" id="oc-batch-approval-form" class="mb-3">
+            {% csrf_token %}
+            <input type="hidden" name="month" value="{{ selected_month }}">
+            <input type="hidden" name="manager" value="{{ selected_manager }}">
+            {% for reg in selected_regions %}<input type="hidden" name="region" value="{{ reg }}">{% endfor %}
+            <button type="submit" class="btn btn-primary btn-sm" id="oc-batch-submit">将选中项标记为已统一发邮件（上传一封邮件）</button>
+        </form>
 
         {% for period, section_records in period_sections %}
         <div class="oc-period-block">
@@ -55,57 +85,51 @@
                 {% endif %}
                 <span class="oc-period-badge">{{ section_records|length }} 人</span>
             </h3>
-            <div class="table-responsive mb-2">
+            <div class="oc-table-wrap mb-2">
                 <table class="copy-table">
                     <thead>
                     <tr>
-                        <th>姓名</th>
-                        <th>工号</th>
+                        <th class="oc-col-select oc-sticky-col">选择</th>
+                        <th class="oc-sticky-col">姓名</th>
+                        <th class="oc-sticky-col">工号</th>
                         <th>日期</th>
-                        <th>开始时间</th>
-                        <th>结束时间</th>
-                        <th>中午休息开始时间</th>
-                        <th>中午休息结束时间</th>
-                        <th>晚上休息开始时间</th>
-                        <th>晚上休息结束时间</th>
+                        <th>时段</th>
+                        <th>休息扣除</th>
                         <th>加班原因</th>
                         <th>部门</th>
                         <th>地域</th>
                         <th>主管</th>
-                        <th>扣除休息后时长（小时）</th>
-                        <th>状态</th>
-                        <th>操作</th>
+                        <th class="oc-col-hours" title="扣除休息后时长（小时）">时长</th>
+                        <th>冻结</th>
+                        <th>邮件</th>
+                        <th>可上报</th>
+                        <th class="oc-sticky-right">操作</th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for r in section_records %}
                         <tr class="{% if r.is_locked %}oc-row-locked{% endif %}">
-                            <td>{{ r.employee_name }}</td>
-                            <td>{{ r.employee_id }}</td>
+                            <td class="oc-col-select oc-sticky-col">
+                                {% if not r.is_locked and r.email_status == 'pending' %}
+                                    <input type="checkbox" name="ids" value="{{ r.id }}" form="oc-batch-approval-form">
+                                {% endif %}
+                            </td>
+                            <td class="oc-sticky-col">{{ r.employee_name }}</td>
+                            <td class="oc-sticky-col">{{ r.employee_id }}</td>
                             <td>{{ r.start_datetime|date:"Y-m-d" }}</td>
-                            <td>{{ r.start_datetime|date:"Y-m-d H:i" }}</td>
-                            <td>{{ r.end_datetime|date:"Y-m-d H:i" }}</td>
-                            <td>
-                                {% if r.include_lunch_break %}
-                                    {{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.lunch_start }}
+                            <td>{{ r.start_datetime|date:"H:i" }}–{{ r.end_datetime|date:"H:i" }}</td>
+                            <td class="oc-col-break">
+                                {% if r.include_lunch_break and r.include_evening_break %}
+                                    <span>午 {{ r.get_break_times_display.lunch_start }}-{{ r.get_break_times_display.lunch_end }}</span> <span>晚 {{ r.get_break_times_display.evening_start }}-{{ r.get_break_times_display.evening_end }}</span>
+                                {% elif r.include_lunch_break %}
+                                    <span>午 {{ r.get_break_times_display.lunch_start }}-{{ r.get_break_times_display.lunch_end }}</span>
+                                {% elif r.include_evening_break %}
+                                    <span>晚 {{ r.get_break_times_display.evening_start }}-{{ r.get_break_times_display.evening_end }}</span>
+                                {% else %}
+                                    —
                                 {% endif %}
                             </td>
-                            <td>
-                                {% if r.include_lunch_break %}
-                                    {{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.lunch_end }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if r.include_evening_break %}
-                                    {{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.evening_start }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if r.include_evening_break %}
-                                    {{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.evening_end }}
-                                {% endif %}
-                            </td>
-                            <td>{{ r.reason|default_if_none:"" }}</td>
+                            <td class="oc-col-reason">{{ r.reason|default_if_none:"" }}</td>
                             <td>{{ r.department }}</td>
                             <td>{{ r.region }}</td>
                             <td>{{ r.manager }}</td>
@@ -118,10 +142,36 @@
                                 {% endif %}
                             </td>
                             <td>
+                                {% if r.email_status == 'pending' %}
+                                    <span class="oc-badge-email-pending">未发邮件</span>
+                                {% elif r.email_status == 'unified' %}
+                                    <span class="oc-badge-email-unified">已统一发邮件</span>
+                                {% else %}
+                                    <span class="oc-badge-email-personal">已个人补发</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.is_reportable %}
+                                    <span class="oc-badge-ok">是</span>
+                                {% else %}
+                                    <span class="oc-badge-no">否</span>
+                                {% endif %}
+                            </td>
+                            <td class="oc-sticky-right">
+                                {% if r.is_reportable %}
+                                    {% if r.approval_batch and r.approval_batch.attachment %}
+                                        <a href="{{ r.approval_batch.attachment.url }}" target="_blank" rel="noopener" class="oc-attachment-link" title="在新标签页中查看审批附件">附件</a>
+                                    {% elif r.approval_attachment %}
+                                        <a href="{{ r.approval_attachment.url }}" target="_blank" rel="noopener" class="oc-attachment-link" title="在新标签页中查看审批附件">附件</a>
+                                    {% endif %}
+                                {% endif %}
                                 {% if r.is_locked %}
                                     <span class="oc-text-muted" style="font-size: 12px;">不可编辑/删除</span>
                                 {% else %}
                                     <a href="{% url 'overtime_edit' r.id %}">编辑</a>
+                                    {% if r.email_status == 'pending' %}
+                                        <a href="{% url 'personal_approval' r.id %}?month={{ selected_month }}&manager={{ selected_manager }}{% for reg in selected_regions %}&region={{ reg }}{% endfor %}" class="oc-action-link">上传补发</a>
+                                    {% endif %}
                                     <form method="post"
                                           action="{% url 'overtime_delete' r.id %}"
                                           style="display:inline"
@@ -139,7 +189,7 @@
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="16" class="text-center">该时段暂无申报</td>
+                            <td colspan="15" class="text-center">该时段暂无申报</td>
                         </tr>
                     {% endfor %}
                     </tbody>
