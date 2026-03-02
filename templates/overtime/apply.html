@@ -78,6 +78,15 @@
                     managerInput.value = "";
                 });
             }
+
+            // 已冻结记录：禁用表单，仅保留返回
+            if (form && form.dataset.frozen === "true") {
+                form.querySelectorAll("input, select, textarea").forEach(function (el) {
+                    el.disabled = true;
+                });
+                var submitBtn = form.querySelector(".oc-form-submit-btn");
+                if (submitBtn) submitBtn.style.display = "none";
+            }
         });
     })();
 </script>
@@ -96,7 +105,13 @@
         </div>
 
         {% block content %}
-        <form method="post" novalidate>
+        {% if is_edit and record.is_locked %}
+        <div class="alert alert-warning mb-3 d-flex align-items-center" role="alert">
+            <strong>该记录已冻结，无法修改。</strong>
+            <span class="ms-2">如需修改请联系管理员在后台解除冻结。</span>
+        </div>
+        {% endif %}
+        <form method="post" novalidate {% if is_edit and record.is_locked %}data-frozen="true"{% endif %}>
             {% csrf_token %}
 
             {% if form.non_field_errors %}
@@ -181,7 +196,7 @@
             </div>
 
             <div class="mt-4 d-flex gap-2 align-items-center">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary oc-form-submit-btn">
                     {% if is_edit %}保存修改{% else %}提交申请{% endif %}
                 </button>
                 <a href="{% url 'overtime_report' %}" class="btn btn-outline-secondary">查看报表</a>

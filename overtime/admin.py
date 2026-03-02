@@ -12,8 +12,9 @@ from .models import (
 
 @admin.register(RegionOption)
 class RegionOptionAdmin(admin.ModelAdmin):
-    list_display = ("name", "order")
+    list_display = ("name", "order", "lunch_start", "lunch_end", "evening_start", "evening_end")
     ordering = ("order", "id")
+    list_editable = ("order", "lunch_start", "lunch_end", "evening_start", "evening_end")
 
 
 @admin.register(ManagerOption)

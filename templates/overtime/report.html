@@ -73,12 +73,13 @@
                         <th>地域</th>
                         <th>主管</th>
                         <th>扣除休息后时长（小时）</th>
+                        <th>状态</th>
                         <th>操作</th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for r in section_records %}
-                        <tr>
+                        <tr class="{% if r.is_locked %}oc-row-locked{% endif %}">
                             <td>{{ r.employee_name }}</td>
                             <td>{{ r.employee_id }}</td>
                             <td>{{ r.start_datetime|date:"Y-m-d" }}</td>
@@ -86,22 +87,22 @@
                             <td>{{ r.end_datetime|date:"Y-m-d H:i" }}</td>
                             <td>
                                 {% if r.include_lunch_break %}
-                                    {{ r.start_datetime|date:"Y-m-d" }} 12:00
+                                    {{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.lunch_start }}
                                 {% endif %}
                             </td>
                             <td>
                                 {% if r.include_lunch_break %}
-                                    {{ r.start_datetime|date:"Y-m-d" }} 13:30
+                                    {{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.lunch_end }}
                                 {% endif %}
                             </td>
                             <td>
                                 {% if r.include_evening_break %}
-                                    {{ r.start_datetime|date:"Y-m-d" }} 17:00
+                                    {{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.evening_start }}
                                 {% endif %}
                             </td>
                             <td>
                                 {% if r.include_evening_break %}
-                                    {{ r.start_datetime|date:"Y-m-d" }} 17:30
+                                    {{ r.start_datetime|date:"Y-m-d" }} {{ r.get_break_times_display.evening_end }}
                                 {% endif %}
                             </td>
                             <td>{{ r.reason|default_if_none:"" }}</td>
@@ -109,11 +110,36 @@
                             <td>{{ r.region }}</td>
                             <td>{{ r.manager }}</td>
                             <td>{{ r.overtime_hours }}</td>
-                            <td><a href="{% url 'overtime_edit' r.id %}">编辑</a></td>
+                            <td>
+                                {% if r.is_locked %}
+                                    <span class="oc-badge-locked">已冻结</span>
+                                {% else %}
+                                    <span class="oc-badge-draft">可编辑</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if r.is_locked %}
+                                    <span class="oc-text-muted" style="font-size: 12px;">不可编辑/删除</span>
+                                {% else %}
+                                    <a href="{% url 'overtime_edit' r.id %}">编辑</a>
+                                    <form method="post"
+                                          action="{% url 'overtime_delete' r.id %}"
+                                          style="display:inline"
+                                          onsubmit="return confirm('确认删除这条加班记录吗？');">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="month" value="{{ selected_month }}">
+                                        <input type="hidden" name="manager" value="{{ selected_manager }}">
+                                        {% for reg in selected_regions %}
+                                            <input type="hidden" name="region" value="{{ reg }}">
+                                        {% endfor %}
+                                        <button type="submit" class="oc-table-link-btn oc-table-link-danger">删除</button>
+                                    </form>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% empty %}
                         <tr>
-                            <td colspan="15" class="text-center">该时段暂无申报</td>
+                            <td colspan="16" class="text-center">该时段暂无申报</td>
                         </tr>
                     {% endfor %}
                     </tbody>

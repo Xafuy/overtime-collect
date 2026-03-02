@@ -1,4 +1,5 @@
 from datetime import date
+from urllib.parse import urlencode
 
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
@@ -143,4 +144,34 @@ def overtime_report(request):
         "manager_options": ManagerOption.objects.all(),
     }
     return render(request, "overtime/report.html", context)
+
+
+def overtime_delete(request, pk: int):
+    """
+    报表中单条记录删除。
+    仅接受 POST 请求，删除后回到报表页，并尽量保留当前筛选条件。
+    """
+    record = get_object_or_404(OvertimeRecord, pk=pk)
+    if request.method != "POST":
+        return redirect("overtime_report")
+
+    record.delete()
+
+    # 删除后带着原有筛选条件返回报表
+    month = request.POST.get("month") or ""
+    manager = request.POST.get("manager") or ""
+    regions = request.POST.getlist("region")
+
+    params = {}
+    if month:
+        params["month"] = month
+    if manager:
+        params["manager"] = manager
+    if regions:
+        params["region"] = regions
+
+    url = reverse("overtime_report")
+    if params:
+        url = f"{url}?{urlencode(params, doseq=True)}"
+    return redirect(url)
 

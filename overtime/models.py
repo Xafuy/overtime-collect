@@ -5,8 +5,15 @@ from django.core.exceptions import ValidationError
 
 
 class RegionOption(models.Model):
+    """地域选项；不同地域可配置不同的午休、晚间休息时间。"""
     name = models.CharField("地域名称", max_length=50, unique=True)
     order = models.PositiveIntegerField("排序", default=0)
+    # 午休时间，不填则默认 12:00-13:30
+    lunch_start = models.TimeField("午休开始", null=True, blank=True)
+    lunch_end = models.TimeField("午休结束", null=True, blank=True)
+    # 晚间休息时间，不填则默认 17:00-17:30；如北京可设为 18:00-18:30
+    evening_start = models.TimeField("晚间休息开始", null=True, blank=True)
+    evening_end = models.TimeField("晚间休息结束", null=True, blank=True)
 
     class Meta:
         verbose_name = "地域选项"
@@ -15,6 +22,18 @@ class RegionOption(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    def get_lunch_start(self):
+        return self.lunch_start or time(12, 0)
+
+    def get_lunch_end(self):
+        return self.lunch_end or time(13, 30)
+
+    def get_evening_start(self):
+        return self.evening_start or time(17, 0)
+
+    def get_evening_end(self):
+        return self.evening_end or time(17, 30)
 
 
 class ManagerOption(models.Model):
@@ -90,10 +109,10 @@ class OvertimeRecord(models.Model):
     end_datetime = models.DateTimeField("加班结束时间")
 
     include_lunch_break = models.BooleanField(
-        "跨午休时段时扣除 12:00-13:30", default=False
+        "跨午休时段时扣除（时间按地域）", default=False
     )
     include_evening_break = models.BooleanField(
-        "跨晚间时段时扣除 17:00-17:30", default=False
+        "跨晚间时段时扣除（时间按地域）", default=False
     )
 
     reason = models.TextField("加班原因", blank=True)
@@ -152,11 +171,32 @@ class OvertimeRecord(models.Model):
         if self.overtime_hours > 8:
             raise ValidationError("扣除休息时间后，当日加班时间不能超过 8 小时。")
 
+    def _get_region_breaks(self):
+        """按地域取午休、晚间休息时间；无配置则用默认。"""
+        region = RegionOption.objects.filter(name=self.region).first()
+        if not region:
+            return time(12, 0), time(13, 30), time(17, 0), time(17, 30)
+        return (
+            region.get_lunch_start(),
+            region.get_lunch_end(),
+            region.get_evening_start(),
+            region.get_evening_end(),
+        )
+
+    def get_break_times_display(self):
+        """用于报表展示：返回当前地域的午休/晚间休息时间字符串。"""
+        ls, le, es, ee = self._get_region_breaks()
+        return {
+            "lunch_start": ls.strftime("%H:%M"),
+            "lunch_end": le.strftime("%H:%M"),
+            "evening_start": es.strftime("%H:%M"),
+            "evening_end": ee.strftime("%H:%M"),
+        }
+
     def _calculate_overtime_hours(self) -> float:
         """
         计算扣除休息时间后的加班时长，单位小时。
-        午休：12:00-13:30
-        晚休：17:00-17:30
+        午休、晚间休息时间按当前记录的地域从 RegionOption 读取。
         """
         start = self.start_datetime
         end = self.end_datetime
@@ -165,10 +205,9 @@ class OvertimeRecord(models.Model):
         if total_seconds <= 0:
             return 0
 
-        # 基础时长（小时）
         hours = total_seconds / 3600.0
-
         base_date = start.date()
+        lunch_start_t, lunch_end_t, evening_start_t, evening_end_t = self._get_region_breaks()
 
         def overlap_seconds(a_start, a_end, b_start, b_end) -> float:
             latest_start = max(a_start, b_start)
@@ -177,16 +216,14 @@ class OvertimeRecord(models.Model):
                 return 0
             return (earliest_end - latest_start).total_seconds()
 
-        # 午休时间段
         if self.include_lunch_break:
-            lunch_start = datetime.combine(base_date, time(12, 0))
-            lunch_end = datetime.combine(base_date, time(13, 30))
+            lunch_start = datetime.combine(base_date, lunch_start_t)
+            lunch_end = datetime.combine(base_date, lunch_end_t)
             hours -= overlap_seconds(start, end, lunch_start, lunch_end) / 3600.0
 
-        # 晚间休息时间段
         if self.include_evening_break:
-            evening_start = datetime.combine(base_date, time(17, 0))
-            evening_end = datetime.combine(base_date, time(17, 30))
+            evening_start = datetime.combine(base_date, evening_start_t)
+            evening_end = datetime.combine(base_date, evening_end_t)
             hours -= overlap_seconds(start, end, evening_start, evening_end) / 3600.0
 
         # 不允许负数
