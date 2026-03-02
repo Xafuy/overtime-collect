@@ -19,7 +19,11 @@ def overtime_apply(request):
     else:
         form = OvertimeRecordForm()
 
-    return render(request, "overtime/apply.html", {"form": form, "is_edit": False})
+    return render(
+        request,
+        "overtime/apply.html",
+        {"form": form, "is_edit": False, "region_options": RegionOption.objects.order_by("order", "id")},
+    )
 
 
 def overtime_success(request):
@@ -50,6 +54,7 @@ def overtime_edit(request, pk: int):
             "form": form,
             "is_edit": True,
             "record": record,
+            "region_options": RegionOption.objects.order_by("order", "id"),
         },
     )
 

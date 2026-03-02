@@ -168,6 +168,14 @@
                     </div>
                 </div>
             </div>
+            <div class="form-text mt-1">各地域休息时间如下，勾选后系统将按所选地域扣除重叠时长：</div>
+            <ul class="form-text mt-1 mb-0 ps-3" style="font-size: 12px;">
+                {% for r in region_options %}
+                <li><strong>{{ r.name }}</strong>：午休 {{ r.get_lunch_start|time:"H:i" }}～{{ r.get_lunch_end|time:"H:i" }}，晚休 {{ r.get_evening_start|time:"H:i" }}～{{ r.get_evening_end|time:"H:i" }}</li>
+                {% empty %}
+                <li>暂未配置地域，请先在后台维护地域选项。</li>
+                {% endfor %}
+            </ul>
 
             <div class="mt-3">
                 <div class="oc-section-title">加班信息</div>
@@ -226,8 +234,12 @@
 
             <div class="oc-section-title">休息时间扣除</div>
             <ul class="mb-3 ps-3">
-                <li>午休：12:00–13:30；晚休：17:00–17:30。</li>
-                <li>勾选对应选项时，系统会自动从加班时段中扣除与休息段的重叠时长。</li>
+                {% for r in region_options %}
+                <li><strong>{{ r.name }}</strong>：午休 {{ r.get_lunch_start|time:"H:i" }}～{{ r.get_lunch_end|time:"H:i" }}，晚休 {{ r.get_evening_start|time:"H:i" }}～{{ r.get_evening_end|time:"H:i" }}</li>
+                {% empty %}
+                <li>各地域在后台配置；勾选后按所选地域从加班时段中扣除重叠时长。</li>
+                {% endfor %}
+                <li>勾选对应选项时，系统会按所选地域的时段从加班时长中扣除与休息段的重叠部分。</li>
             </ul>
 
             <div class="oc-section-title">时长限制</div>

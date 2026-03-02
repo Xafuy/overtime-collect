@@ -11,7 +11,7 @@ class RegionOption(models.Model):
     # 午休时间，不填则默认 12:00-13:30
     lunch_start = models.TimeField("午休开始", null=True, blank=True)
     lunch_end = models.TimeField("午休结束", null=True, blank=True)
-    # 晚间休息时间，不填则默认 17:00-17:30；如北京可设为 18:00-18:30
+    # 晚间休息时间，不填则默认 18:00-18:30
     evening_start = models.TimeField("晚间休息开始", null=True, blank=True)
     evening_end = models.TimeField("晚间休息结束", null=True, blank=True)
 
@@ -30,10 +30,10 @@ class RegionOption(models.Model):
         return self.lunch_end or time(13, 30)
 
     def get_evening_start(self):
-        return self.evening_start or time(17, 0)
+        return self.evening_start or time(18, 0)
 
     def get_evening_end(self):
-        return self.evening_end or time(17, 30)
+        return self.evening_end or time(18, 30)
 
 
 class ManagerOption(models.Model):
@@ -227,7 +227,7 @@ class OvertimeRecord(models.Model):
         """按地域取午休、晚间休息时间；无配置则用默认。"""
         region = RegionOption.objects.filter(name=self.region).first()
         if not region:
-            return time(12, 0), time(13, 30), time(17, 0), time(17, 30)
+            return time(12, 0), time(13, 30), time(18, 0), time(18, 30)
         return (
             region.get_lunch_start(),
             region.get_lunch_end(),
