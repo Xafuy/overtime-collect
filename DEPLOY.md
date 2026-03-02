@@ -101,6 +101,24 @@ python manage.py collectstatic --noinput
 
 并将 Nginx 或托管把 `/static/` 指到 `staticfiles` 目录。
 
+### 5. 自动冻结上月加班记录（可选）
+
+每月第 5 天及之后，可将**上一个自然月**的加班记录自动设为已冻结，避免误改历史数据。
+
+- **手动执行**（例如每月 6 号跑一次）：
+  ```bash
+  python manage.py freeze_previous_month_overtime
+  ```
+- **仅查看将要冻结条数（不写入）**：
+  ```bash
+  python manage.py freeze_previous_month_overtime --dry-run
+  ```
+- **用 cron 每日自动执行**（推荐）：在服务器上 `crontab -e` 增加一行，每天凌晨执行一次，命令中日期 ≥5 时才会冻结上月：
+  ```text
+  0 1 * * * cd /path/to/overtimecollect && .venv/bin/python manage.py freeze_previous_month_overtime >> /var/log/overtime-freeze.log 2>&1
+  ```
+  Windows 可用「任务计划程序」在每月 6 号运行上述命令。
+
 ---
 
 ## 三、备份建议
@@ -118,3 +136,4 @@ python manage.py collectstatic --noinput
 | 创建管理员     | `python manage.py createsuperuser` |
 | 收集静态文件   | `python manage.py collectstatic` |
 | 检查配置与模型 | `python manage.py check` |
+| 冻结上月加班（每月第 5 天后） | `python manage.py freeze_previous_month_overtime` |

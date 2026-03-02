@@ -72,7 +72,12 @@ document.addEventListener("DOMContentLoaded", function() {
             <input type="hidden" name="month" value="{{ selected_month }}">
             <input type="hidden" name="manager" value="{{ selected_manager }}">
             {% for reg in selected_regions %}<input type="hidden" name="region" value="{{ reg }}">{% endfor %}
-            <button type="submit" class="btn btn-primary btn-sm" id="oc-batch-submit">将选中项标记为已统一发邮件（上传一封邮件）</button>
+            <button type="submit" class="btn btn-outline-secondary btn-sm me-2" name="op" value="mark" id="oc-batch-mark-submit">
+                标记选中为已统一发邮件（待回复）
+            </button>
+            <button type="submit" class="btn btn-primary btn-sm" name="op" value="upload" id="oc-batch-submit">
+                将选中项标记为已统一发邮件（上传一封邮件）
+            </button>
         </form>
 
         {% for period, section_records in period_sections %}
@@ -110,7 +115,7 @@ document.addEventListener("DOMContentLoaded", function() {
                     {% for r in section_records %}
                         <tr class="{% if r.is_locked %}oc-row-locked{% endif %}">
                             <td class="oc-col-select oc-sticky-col">
-                                {% if not r.is_locked and r.email_status == 'pending' %}
+                                {% if not r.is_locked and r.email_status != 'personal' %}
                                     <input type="checkbox" name="ids" value="{{ r.id }}" form="oc-batch-approval-form">
                                 {% endif %}
                             </td>
@@ -144,8 +149,10 @@ document.addEventListener("DOMContentLoaded", function() {
                             <td>
                                 {% if r.email_status == 'pending' %}
                                     <span class="oc-badge-email-pending">未发邮件</span>
+                                {% elif r.email_status == 'unified_sent' %}
+                                    <span class="oc-badge-email-unified">已统一发邮件（待回复）</span>
                                 {% elif r.email_status == 'unified' %}
-                                    <span class="oc-badge-email-unified">已统一发邮件</span>
+                                    <span class="oc-badge-email-unified">已统一发邮件（已回执）</span>
                                 {% else %}
                                     <span class="oc-badge-email-personal">已个人补发</span>
                                 {% endif %}
@@ -171,6 +178,8 @@ document.addEventListener("DOMContentLoaded", function() {
                                     <a href="{% url 'overtime_edit' r.id %}">编辑</a>
                                     {% if r.email_status == 'pending' %}
                                         <a href="{% url 'personal_approval' r.id %}?month={{ selected_month }}&manager={{ selected_manager }}{% for reg in selected_regions %}&region={{ reg }}{% endfor %}" class="oc-action-link">上传补发</a>
+                                    {% elif r.email_status == 'personal' %}
+                                        <a href="{% url 'personal_approval' r.id %}?month={{ selected_month }}&manager={{ selected_manager }}{% for reg in selected_regions %}&region={{ reg }}{% endfor %}" class="oc-action-link">重新上传补发</a>
                                     {% endif %}
                                     <form method="post"
                                           action="{% url 'overtime_delete' r.id %}"

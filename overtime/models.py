@@ -118,11 +118,13 @@ class ApprovalBatch(models.Model):
 class OvertimeRecord(models.Model):
 
     EMAIL_STATUS_PENDING = "pending"
+    EMAIL_STATUS_UNIFIED_SENT = "unified_sent"
     EMAIL_STATUS_UNIFIED = "unified"
     EMAIL_STATUS_PERSONAL = "personal"
     EMAIL_STATUS_CHOICES = [
         (EMAIL_STATUS_PENDING, "未发邮件"),
-        (EMAIL_STATUS_UNIFIED, "已统一发邮件"),
+        (EMAIL_STATUS_UNIFIED_SENT, "已统一发邮件（待回复）"),
+        (EMAIL_STATUS_UNIFIED, "已统一发邮件（已回执）"),
         (EMAIL_STATUS_PERSONAL, "已个人补发邮件"),
     ]
 

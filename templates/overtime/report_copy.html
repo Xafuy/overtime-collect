@@ -106,8 +106,10 @@
                         <td>
                             {% if r.email_status == 'pending' %}
                                 <span class="oc-badge-email-pending">未发邮件</span>
+                            {% elif r.email_status == 'unified_sent' %}
+                                <span class="oc-badge-email-unified">已统一发邮件（待回复）</span>
                             {% elif r.email_status == 'unified' %}
-                                <span class="oc-badge-email-unified">已统一发邮件</span>
+                                <span class="oc-badge-email-unified">已统一发邮件（已回执）</span>
                             {% else %}
                                 <span class="oc-badge-email-personal">已个人补发</span>
                             {% endif %}

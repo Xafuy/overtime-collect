@@ -26,7 +26,15 @@
         <div class="mb-3">
             <label class="form-label">邮件附件 <span class="text-danger">*</span></label>
             <input type="file" name="attachment" class="form-control" accept=".pdf,.eml,.msg,.doc,.docx,image/*" required>
+            {% if record.approval_attachment %}
+            <div class="form-text">
+                当前已上传附件：
+                <a href="{{ record.approval_attachment.url }}" target="_blank" rel="noopener">查看附件</a>。
+                如需更正，可直接重新上传，新附件会覆盖旧附件。
+            </div>
+            {% else %}
             <div class="form-text">上传该条加班的审批邮件或证明（须含 xm 确认回复），上传后将标记为「已个人补发邮件」并可上报。</div>
+            {% endif %}
         </div>
         <div class="d-flex gap-2 align-items-center">
             <button type="submit" class="btn btn-primary">确认上传</button>

@@ -233,13 +233,54 @@ def batch_unified_approval(request):
     """
     # 从报表页 POST 过来的选中 id 及筛选参数
     if request.method == "POST" and not request.FILES.get("attachment"):
+        op = request.POST.get("op") or "upload"
         ids = [int(x) for x in request.POST.getlist("ids") if str(x).isdigit()]
+        month = request.POST.get("month") or ""
+        manager = request.POST.get("manager") or ""
+        regions = request.POST.getlist("region")
+
+        if not ids:
+            messages.warning(request, "请先勾选至少一条记录。")
+            params = {}
+            if month:
+                params["month"] = month
+            if manager:
+                params["manager"] = manager
+            if regions:
+                params["region"] = regions
+            url = reverse("overtime_report")
+            if params:
+                url = f"{url}?{urlencode(params, doseq=True)}"
+            return redirect(url)
+
+        if op == "mark":
+            # 仅将状态标记为“已统一发邮件（待回复）”
+            qs = OvertimeRecord.objects.filter(
+                pk__in=ids, email_status=OvertimeRecord.EMAIL_STATUS_PENDING
+            )
+            n = qs.update(email_status=OvertimeRecord.EMAIL_STATUS_UNIFIED_SENT)
+            messages.success(
+                request, f"已将 {n} 条记录标记为「已统一发邮件（待回复）」；待收到主管回复后再上传审批附件。"
+            )
+            params = {}
+            if month:
+                params["month"] = month
+            if manager:
+                params["manager"] = manager
+            if regions:
+                params["region"] = regions
+            url = reverse("overtime_report")
+            if params:
+                url = f"{url}?{urlencode(params, doseq=True)}"
+            return redirect(url)
+
+        # 上传统一审批邮件：保存勾选 id 与筛选参数到 session，跳转到上传页
         if ids:
             request.session["batch_approval_ids"] = ids
             request.session["batch_approval_report_params"] = {
-                "month": request.POST.get("month") or "",
-                "manager": request.POST.get("manager") or "",
-                "regions": request.POST.getlist("region"),
+                "month": month,
+                "manager": manager,
+                "regions": regions,
             }
         return redirect("batch_unified_approval")
 
@@ -256,7 +297,14 @@ def batch_unified_approval(request):
         valid_ids = [
             pk for pk in ids
             if isinstance(pk, int)
-            and OvertimeRecord.objects.filter(pk=pk, email_status=OvertimeRecord.EMAIL_STATUS_PENDING).exists()
+            and OvertimeRecord.objects.filter(
+                pk=pk,
+                email_status__in=[
+                    OvertimeRecord.EMAIL_STATUS_PENDING,
+                    OvertimeRecord.EMAIL_STATUS_UNIFIED_SENT,
+                    OvertimeRecord.EMAIL_STATUS_UNIFIED,
+                ],
+            ).exists()
         ]
         n = OvertimeRecord.objects.filter(pk__in=valid_ids).update(
             email_status=OvertimeRecord.EMAIL_STATUS_UNIFIED,
